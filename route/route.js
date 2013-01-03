@@ -48,7 +48,8 @@ steal('can/util','can/observe', 'can/util/string/deparam', function(can) {
 			
 			return count;
 		},
-		onready = !0,
+		// ROAM7 set onready to false to fix race condition
+        onready = !1,
 		location = window.location,
 		wrapQuote = function(str) {
 			return (str+'').replace(/([.?*+\^$\[\]\\(){}|\-])/g, "\\$1");
@@ -410,8 +411,12 @@ steal('can/util','can/observe', 'can/util/string/deparam', function(can) {
 			return location.href.split(/#!?/)[1] || "";
 		},
 		_setHash: function(serialized) {
-			var path = (can.route.param(serialized, true));
-			location.hash = "#!" + path;
+			var path = (can.route.param(serialized, true)),
+                hashPath = "#!" + path;
+            // check added by ROAM7 to avoid reloads
+            if (location.hash != hashPath) {
+                location.hash = hashPath;
+            }
 			return path;
 		}
 	});
