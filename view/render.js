@@ -12,11 +12,12 @@ try {
 var attrMap = {
 		"class" : "className",
 		"value": "value",
+		"innerText" : "innerText",
 		"textContent" : "textContent"
 	},
 	tagMap = {
 		"": "span", 
-		table: "tr", 
+		table: "tbody", 
 		tr: "td",
 		ol: "li", 
 		ul: "li", 
@@ -29,7 +30,7 @@ var attrMap = {
 	attributePlaceholder = '__!!__',
 	attributeReplace = /__!!__/g,
 	tagToContentPropMap = {
-		option: "textContent",
+		option: "textContent" in document.createElement("option") ? "textContent" : "innerText",
 		textarea: "value"
 	},
 	bool = can.each(["checked","disabled","readonly","required"], function(n){
@@ -47,7 +48,7 @@ var attrMap = {
 			if (prop) {
 				// set the value as true / false
 				el[prop] = can.inArray(attrName, bool) > -1 ? true : val;
-				if(prop === "value" && tagName === "input") {
+				if(prop === "value" && (tagName === "input" || tagName === "textarea")) {
 					el.defaultValue = val;
 				}
 			} else {
@@ -262,7 +263,7 @@ can.extend(can.view, {
 			// example options should use textContent
 			contentProp = tagToContentPropMap[tagName];
 		
-		
+
 		// The magic tag is outside or between tags.
 		if ( status === 0 && !contentProp ) {
 			// Return an element tag with a hookup in place of the content
@@ -326,8 +327,15 @@ can.extend(can.view, {
 								nodeList = nodes;
 								can.view.registerNode(nodes);
 							} else {
-								can.remove( can.$(nodes) );
+								// Update node Array's to point to new nodes
+								// and then remove the old nodes.
+								// It has to be in this order for Mootools
+								// and IE because somehow, after an element
+								// is removed from the DOM, it loses its
+								// expando values.
+								var nodesToRemove = can.makeArray(nodes);
 								can.view.replace(nodes,newNodes);
+								can.remove( can.$(nodesToRemove) );
 							}
 						};
 						// nodes are the nodes that any updates will replace

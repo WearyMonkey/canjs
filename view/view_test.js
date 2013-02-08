@@ -3,9 +3,28 @@
 
 	test("multiple template types work", function(){
 		var expected = '<h3>helloworld</h3>';
-		can.each(["micro","ejs","jaml"], function(ext){
-			var actual = can.view.render("//can/view/test//template." + ext, {
+		can.each(["micro","ejs","jaml", "mustache"], function(ext){
+			var actual = can.view.render("//can/view/test/template." + ext, {
 				"message" :"helloworld"
+			}, {
+				helper: function(){
+					return "foo"
+				}
+			});
+
+			equal(can.trim(actual), expected, "Text rendered");
+		})
+	});
+
+	test("helpers work", function(){
+		var expected = '<h3>helloworld</h3><div>foo</div>';
+		can.each(["ejs", "mustache"], function(ext){
+			var actual = can.view.render("//can/view/test/helpers." + ext, {
+				"message" :"helloworld"
+			}, {
+				helper: function(){
+					return "foo"
+				}
 			});
 
 			equal(can.trim(actual), expected, "Text rendered");
@@ -189,7 +208,7 @@
 		equal(nameless.render(data), '<h3>MUSTACHE!</h3>', '.render Mustache works and returns HTML');
 	});
 
-	test("deferred resolves with data (#183)", function(){
+	test("deferred resolves with data (#183, #209)", function(){
 		var foo = new can.Deferred();
 		var bar = new can.Deferred();
 		var original = {
@@ -199,7 +218,7 @@
 
 		stop();
 		ok(can.isDeferred(original.foo), 'Original foo property is a Deferred');
-		can.view.render("//can/view/test//deferred.ejs", original).then(function(result, data){
+		can.view("//can/view/test//deferred.ejs", original).then(function(result, data){
 			ok(data, 'Data exists');
 			equal(data.foo, 'FOO', 'Foo is resolved');
 			equal(data.bar, 'BAR', 'Bar is resolved');
@@ -232,5 +251,53 @@
 			div.appendChild(frag);
 			equal(div.innerHTML, 'User id: - User name: -', 'Got expected HTML content in callback as well');
 		});
+	});
+
+	test("Select live bound options don't contain __!!__", function() {
+		var domainList = new can.Observe.List([{
+		  id: 1,
+		  name: 'example.com'
+		}, {
+		  id: 2,
+		  name: 'google.com'
+		}, {
+		  id: 3,
+		  name: 'yahoo.com'
+		}, {
+		  id: 4,
+		  name: 'microsoft.com'
+		}]),
+		frag = can.view("//can/view/test/select.ejs", {
+			domainList: domainList
+		}),
+		div = document.createElement('div');
+
+		div.appendChild(frag);
+		can.append( can.$("#qunit-test-area"), div)
+		equal(div.outerHTML.match(/__!!__/g), null, 'No __!!__ contained in HTML content')
+
+		//equal(can.$('#test-dropdown')[0].outerHTML, can.$('#test-dropdown2')[0].outerHTML, 'Live bound select and non-live bound select the same');
+
+		
+	});
+
+	test("Resetting a live-bound <textarea> changes its value to __!!__ (#223)", function() {
+		var template = can.view.ejs("<form><textarea><%= this.attr('test') %></textarea></form>"),
+			frag = template(new can.Observe({
+				test : 'testing'
+			})),
+			form, textarea;
+
+		can.append(can.$("#qunit-test-area"), frag);
+
+		form = document.getElementById('qunit-test-area').getElementsByTagName('form')[0];
+		textarea = form.children[0];
+
+		equal(textarea.value, 'testing', 'Textarea value set');
+		textarea.value = 'blabla';
+		equal(textarea.value, 'blabla', 'Textarea value updated');
+
+		form.reset();
+		equal(form.children[0].value, 'testing', 'Textarea value set back to original live-bound value');
 	});
 })();

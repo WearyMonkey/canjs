@@ -549,7 +549,6 @@ test("object definitions", function(){
 	// and notice when leaving one out the other is still there
 	ObjectDef.findAll({ start: 0, count: 10 }, function(data){
 		start();
-		console.log("DATA IS", data)
 		equals(data[0].myflag, undefined, 'my flag is undefined')
 	}); 
 })
@@ -868,7 +867,6 @@ test("model list attr", function() {
 	equal( list1.length, 0, "Initial empty list has length of 0")
 	list1.attr( list2 );
 	equal( list1.length, 2, "Merging using attr yields length of 2")
-	console.log( list1 )
 
 });
 
@@ -900,8 +898,6 @@ test("destroying a model impact the right list", function() {
 	list2[0].destroy();
 	equal( list1.length, 2, "After destroying list2[0] Person.List has length of 2")
 	equal( list2.length, 1, "After destroying list2[0] Organisation.List has length of 1")
-	console.log( list1 )
-	console.log( list2 )
 
 });
 
@@ -962,6 +958,64 @@ test(".models updates existing list if passed", 4, function() {
 	equal(list, newList, 'Lists are the same');
 	equal(newList.attr('length'), 3, 'List has new items');
 	equal(list[0].name, 'third', 'New item is the first one');
+});
+
+test("calling destroy with unsaved model triggers destroyed event (#181)", function() {
+	var MyModel = can.Model({}, {}),
+		newModel = new MyModel(),
+		list = new MyModel.List(),
+		deferred;
+
+	list.push(newModel);
+	equal(list.attr('length'), 1, "List length as expected");
+
+	deferred = newModel.destroy();
+
+	ok(deferred, ".destroy returned a Deferred");
+	equal(list.attr('length'), 0, "Unsaved model removed from list");
+	deferred.done(function(data) {
+		ok(data == newModel, "Resolved with destroyed model as described in docs");
+	});
+});
+
+test("model removeAttr (#245)", function() {
+	var MyModel = can.Model({}),
+		model;
+	MyModel._reqs++; // pretend it is live bound
+	model = MyModel.model({
+		id: 0,
+		index: 2,
+		name: 'test'
+	});
+
+	model = MyModel.model({
+		id: 0,
+		name: 'text updated'
+	});
+
+	equal(model.attr('name'), 'text updated', 'attribute updated');
+	equal(model.attr('index'), 2, 'Index attribute still remains');
+
+	MyModel = can.Model({
+		removeAttr: true
+	}, {});
+	MyModel._reqs++; // pretend it is live bound
+	model = MyModel.model({
+		id: 0,
+		index: 2,
+		name: 'test'
+	});
+
+	model = MyModel.model({
+		id: 0,
+		name: 'text updated'
+	});
+
+	equal(model.attr('name'), 'text updated', 'attribute updated');
+	deepEqual(model.attr(), {
+		id: 0,
+		name: 'text updated'
+	}, 'Index attribute got removed');
 });
 
 })();

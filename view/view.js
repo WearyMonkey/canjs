@@ -26,14 +26,18 @@ steal("can/util", function( can ) {
 				callback(pipe(frag));
 			} : null,
 			// Get the result.
-			result = $view.render(view, data, helpers, wrapCallback);
+			result = $view.render(view, data, helpers, wrapCallback),
+			deferred = can.Deferred();
 
 		if(isFunction(result))  {
 			return result;
 		}
 
 		if(can.isDeferred(result)){
-			return result.pipe(pipe);
+			result.done(function(result, data) {
+				deferred.resolve.call(deferred, pipe(result), data);
+			});
+			return deferred;
 		}
 		
 		// Convert it into a dom frag.
@@ -616,9 +620,12 @@ steal("can/util", function( can ) {
 			$view.cached[id] = new can.Deferred().resolve(function( data, helpers ) {
 				return renderer.call(data, data, helpers);
 			});
-			return function(){
-				return $view.frag(renderer.apply(this,arguments))
-			};
+			function frag(){
+				return $view.frag(renderer.apply(this,arguments));
+			}
+			// expose the renderer for mustache
+			frag.render = renderer;
+			return frag;
 		}
 
 	});

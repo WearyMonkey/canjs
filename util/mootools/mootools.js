@@ -1,14 +1,82 @@
 steal('can/util/can.js', 'mootools', 'can/util/event.js','can/util/fragment.js', 'can/util/deferred.js',
-'can/util/array/each.js', 'can/util/object/isplain', 'can/util/object/extend', function(can) {
+'can/util/array/each.js', 'can/util/object/isplain', '../hashchange.js', function(can) {
 	// mootools.js
 	// ---------
 	// _MooTools node list._
-	// 
+	//
 	// Map string helpers.
 	can.trim = function(s){
 		return s && s.trim()
 	}
-	
+
+	// This extend() function is ruthlessly and shamelessly stolen from
+	// jQuery 1.8.2:, lines 291-353.
+	var extend = function() {
+		var options, name, src, copy, copyIsArray, clone,
+			target = arguments[0] || {},
+			i = 1,
+			length = arguments.length,
+			deep = false;
+
+		// Handle a deep copy situation
+		if ( typeof target === "boolean" ) {
+			deep = target;
+			target = arguments[1] || {};
+			// skip the boolean and the target
+			i = 2;
+		}
+
+		// Handle case when target is a string or something (possible in deep copy)
+		if ( typeof target !== "object" && !can.isFunction(target) ) {
+			target = {};
+		}
+
+		// extend jQuery itself if only one argument is passed
+		if ( length === i ) {
+			target = this;
+			--i;
+		}
+
+		for ( ; i < length; i++ ) {
+			// Only deal with non-null/undefined values
+			if ( (options = arguments[ i ]) != null ) {
+				// Extend the base object
+				for ( name in options ) {
+					src = target[ name ];
+					copy = options[ name ];
+
+					// Prevent never-ending loop
+					if ( target === copy ) {
+						continue;
+					}
+
+					// Recurse if we're merging plain objects or arrays
+					if ( deep && copy && ( can.isPlainObject(copy) || (copyIsArray = can.isArray(copy)) ) ) {
+						if ( copyIsArray ) {
+							copyIsArray = false;
+							clone = src && can.isArray(src) ? src : [];
+
+						} else {
+							clone = src && can.isPlainObject(src) ? src : {};
+						}
+
+						// Never move original objects, clone them
+						target[ name ] = can.extend( deep, clone, copy );
+
+						// Don't bring in undefined values
+					} else if ( copy !== undefined ) {
+						target[ name ] = copy;
+					}
+				}
+			}
+		}
+
+		// Return the modified object
+		return target;
+	};
+
+	can.extend = extend;
+
 	// Map array helpers.
 	can.makeArray = function(item) {
 		// All other libraries return a copy if item is an array.
@@ -52,19 +120,25 @@ steal('can/util/can.js', 'mootools', 'can/util/event.js','can/util/fragment.js',
 	can.proxy = function(func){
 		var args = can.makeArray(arguments),
 			func = args.shift();
-		
+
 		return func.bind.apply(func, args)
 	}
 	can.isFunction = function(f){
 		return typeOf(f) == 'function'
 	}
+
+
+
 	// Make this object so you can bind on it.
 	can.bind = function( ev, cb){
+		
 		// If we can bind to it...
 		if(this.bind && this.bind !== can.bind){
 			this.bind(ev, cb)
 		} else if(this.addEvent) {
-			this.addEvent(ev, cb)
+			this.addEvent(ev, cb);
+		} else if(this.nodeName && this.nodeType == 1) {
+			$(this).addEvent(ev, cb)
 		} else {
 			// Make it bind-able...
 			can.addEvent.call(this, ev, cb)
@@ -77,6 +151,8 @@ steal('can/util/can.js', 'mootools', 'can/util/event.js','can/util/fragment.js',
 			this.unbind(ev, cb)
 		} else if(this.removeEvent) {
 			this.removeEvent(ev, cb)
+		} if(this.nodeName && this.nodeType == 1) {
+			$(this).removeEvent(ev, cb)
 		} else {
 			// Make it bind-able...
 			can.removeEvent.call(this, ev, cb)
@@ -98,24 +174,24 @@ steal('can/util/can.js', 'mootools', 'can/util/event.js','can/util/fragment.js',
 						target : item
 					}
 				}
-				var events = (item !== window ? 
+				var events = (item !== window ?
 					can.$(item).retrieve('events')[0] :
 					item.retrieve('events') );
 				if (events && events[event.type]) {
 					events[event.type].keys.each(function(fn){
 						fn.apply(this, [event].concat(args));
-					}, this); 
-				} 
+					}, this);
+				}
 				// If we are bubbling, get parent node.
 				if(bubble && item.parentNode){
 					item = item.parentNode
 				} else {
 					item = null;
 				}
-				
+
 			}
-			
-	
+
+
 		} else {
 			if(typeof event === 'string'){
 				event = {type: event}
@@ -144,7 +220,7 @@ steal('can/util/can.js', 'mootools', 'can/util/event.js','can/util/fragment.js',
 			this.removeEvent(ev+":relay("+selector+")", cb)
 		} else {
 			// make it bind-able ...
-			
+
 		}
 		return this;
 	}
@@ -168,7 +244,7 @@ steal('can/util/can.js', 'mootools', 'can/util/event.js','can/util/fragment.js',
 		var d = can.Deferred(),
 			requestOptions = can.extend({}, options);
 		// Map jQuery options to MooTools options.
-		
+
 		for(var option in optionsMap){
 			if(requestOptions[option] !== undefined){
 				requestOptions[optionsMap[option]] = requestOptions[option];
@@ -181,7 +257,7 @@ steal('can/util/can.js', 'mootools', 'can/util/event.js','can/util/fragment.js',
 
 		var success = options.success,
 			error = options.error;
-		
+
 		requestOptions.onSuccess = function(responseText, xml){
 			var data = responseText;
 			if(options.dataType ==='json'){
@@ -196,12 +272,12 @@ steal('can/util/can.js', 'mootools', 'can/util/event.js','can/util/fragment.js',
 			d.reject(request.xhr,"error");
 			error(request.xhr,"error");
 		}
-		
+
 		var request = new Request(requestOptions);
 		request.send();
 		updateDeferred(request.xhr, d);
 		return d;
-			
+
 	}
 	// Element -- get the wrapped helper.
 	can.$ = function(selector){
@@ -210,7 +286,7 @@ steal('can/util/can.js', 'mootools', 'can/util/event.js','can/util/fragment.js',
 		}
 		return $$(selector)
 	}
-	
+
 	// Add `document` fragment support.
 	var old = document.id;
 	document.id =  function(el){
@@ -241,7 +317,7 @@ steal('can/util/can.js', 'mootools', 'can/util/event.js','can/util/fragment.js',
 	}
 	can.remove = function(wrapped){
 		// We need to remove text nodes ourselves.
-		var filtered = wrapped.filter(function(node){ 
+		var filtered = wrapped.filter(function(node){
 			if(node.nodeType !== 1){
 				node.parentNode.removeChild(node);
 			} else {
@@ -251,7 +327,7 @@ steal('can/util/can.js', 'mootools', 'can/util/event.js','can/util/fragment.js',
 		filtered.destroy();
 		return filtered;
 	}
-	
+
 	// Destroyed method.
 	var destroy = Element.prototype.destroy;
 	Element.implement({
@@ -267,18 +343,17 @@ steal('can/util/can.js', 'mootools', 'can/util/event.js','can/util/fragment.js',
 	can.get = function(wrapped, index){
 		return wrapped[index];
 	}
-	
+
 	// Overwrite to handle IE not having an id.
 	// IE barfs if text node.
 	var idOf = Slick.uidOf;
 	Slick.uidOf = function(node){
-		if(node.nodeType === 1 || node === window){
+		// for some reason, in IE8, node will be the window but not equal it.
+		if(node.nodeType === 1 || node === window || node.document === document ) {
 			return idOf(node);
 		} else {
 			return Math.random();
 		}
-			
-		
 	}
 
 	return can;
