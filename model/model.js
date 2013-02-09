@@ -66,9 +66,9 @@ steal('can/util','can/observe', function( can ) {
 				error: error
 			}, params ));
 		},
-		makeRequest = function( self, type, success, error, method ) {
+		makeRequest = function( self, type, options, method ) {
 			var deferred,
-				args = [self.serialize()],
+				args = [self.serialize(), options],
 				// The model.
 				model = self.constructor,
 				jqXHR;
@@ -97,7 +97,6 @@ steal('can/util','can/observe', function( can ) {
 				};
 			}
 
-			deferred.then(success,error);
 			return deferred;
 		},
 	
@@ -942,8 +941,8 @@ steal('can/util','can/observe', function( can ) {
 		 * @return {can.Deferred} a deferred that resolves to the instance
 		 * after it has been created or updated.
 		 */
-		save: function( success, error ) {
-			return makeRequest(this, this.isNew() ? 'create' : 'update', success, error);
+		save: function( options ) {
+			return makeRequest(this, this.isNew() ? 'create' : 'update', options);
 		},
 		/**
 		 * Destroys the instance by calling 
@@ -976,14 +975,14 @@ steal('can/util','can/observe', function( can ) {
 		 * @param {Function} [error(xhr)] called if an unsuccessful destroy
 		 * @return {can.Deferred} a deferred that resolves with the destroyed instance
 		 */
-		destroy: function( success, error ) {
+		destroy: function(options) {
 			if(this.isNew()) {
 				var self = this;
 				return can.Deferred().done(function(data) {
 					self.destroyed(data)
 				}).resolve(self);
 			}
-			return makeRequest(this, 'destroy', success, error, 'destroyed');
+			return makeRequest(this, 'destroy', options, 'destroyed');
 		},
 		/**
 		 * @function bind
