@@ -310,7 +310,7 @@ steal('can/util','can/construct', function(can) {
 			delete this._init;
 		},
 		_changes: function(ev, attr, how,newVal, oldVal){
-			Observe.triggerBatch(this, {type:attr, batchNum: ev.batchNum}, [newVal,oldVal]);
+			Observe.triggerBatch(this, attr, [newVal,oldVal]);
 		},
 		_triggerChange: function(attr, how,newVal, oldVal){
 			Observe.triggerBatch(this,"change",can.makeArray(arguments))
