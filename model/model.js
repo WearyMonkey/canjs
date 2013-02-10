@@ -1134,7 +1134,9 @@ steal('can/util','can/observe', function( can ) {
 				constructor = this.constructor;
 
 			// Update attributes if attributes have been passed
-			stub = attrs && typeof attrs == 'object' && this.attr(attrs.attr ? attrs.attr() : attrs);
+            // ROAM7: Chanegd attrs call to model call so we execute the caching logic
+            // this wont be needed if cache model listens for indexed attrs changing
+			stub = attrs && typeof attrs == 'object' && this.constructor.model(attrs);
 
 			// Call event on the instance
 			can.trigger(this,funcName);
