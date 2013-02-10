@@ -1096,8 +1096,8 @@ steal('can/util','can/observe', function( can ) {
 	}, function( method, name ) {
 		can.Model[name] = function( oldFind ) {
 			return function( params, success, error ) {
-				var def = oldFind.call( this, params );
-                pipe( def, this, method ).then( success, error );
+				var def = pipe( oldFind.call( this, params ), this, method );
+				def.then( success, error );
 				// return the original promise
 				return def;
 			};
