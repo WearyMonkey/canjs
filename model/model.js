@@ -1228,20 +1228,37 @@ steal('can/util','can/observe', function( can ) {
    *
    */
 	var ML = can.Model.List = can.Observe.List({
-		setup : function(){
-			can.Observe.List.prototype.setup.apply(this, arguments );
-			// Send destroy events.
-			var self = this;
-			this.bind('change', function(ev, how){
-				if(/\w+\.destroyed/.test(how)){
-					var index = self.indexOf(ev.target);
-					if (index != -1) {
-						self.splice(index, 1);
-					}
-				}
-			})
-		}
+      bind: function() {
+          var self = this;
+          if (!this[$.expando]) {
+              bindDestroy(this, this);
+              can.Observe.List.prototype.bind.call(this, "add", function(ev, added) {
+                  bindDestroy(self, added);
+              });
+              can.Observe.List.prototype.bind.call(this, "remove", function(ev, removed) {
+                  unbindDestroy(self, removed);
+              });
+          }
+          return can.Observe.List.prototype.bind.apply(this, arguments);
+      }
 	})
 
 	return can.Model;
+
+    function bindDestroy(self, models) {
+        can.each(models, function(model) {
+            model.bind("destroyed."+self._cid, function() {
+                var index = self.indexOf(model);
+                if (index != -1) {
+                    self.splice(index, 1);
+                }
+            });
+        })
+    }
+
+    function unbindDestroy(self, models) {
+        can.each(models, function(model) {
+            model.unbind("destroyed."+self._cid);
+        });
+    }
 })

@@ -250,7 +250,7 @@ steal('can/util','can/construct', function(can) {
 		 */
 		triggerBatch: function( item, event, args ) {
 			// Don't send events if initalizing.
-			if ( ! item._init) {
+			if ( ! item._init && item[$.expando] ) {
 				if (transactions == 0 ) {
 					return can.trigger(item, event, args);
 				} else {
@@ -306,14 +306,14 @@ steal('can/util','can/construct', function(can) {
 			// Sets all `attrs`.
 			this._init = 1;
 			this.attr(obj);
-			this.bind('change'+this._cid,can.proxy(this._changes,this));
 			delete this._init;
 		},
 		_changes: function(ev, attr, how,newVal, oldVal){
 			Observe.triggerBatch(this, attr, [newVal,oldVal]);
 		},
 		_triggerChange: function(attr, how,newVal, oldVal){
-			Observe.triggerBatch(this,"change",can.makeArray(arguments))
+            Observe.triggerBatch(this,"change",can.makeArray(arguments));
+            Observe.triggerBatch(this, attr, [newVal,oldVal]);
 		},
 		/**
 		 * Get or set an attribute or attributes on the observe.
@@ -1028,7 +1028,6 @@ steal('can/util','can/construct', function(can) {
 			can.cid(this, ".observe")
 			this._init = 1;
 			this.push.apply(this, can.makeArray(instances || []));
-			this.bind('change'+this._cid,can.proxy(this._changes,this));
 			can.extend(this, options);
 			delete this._init;
 		},
