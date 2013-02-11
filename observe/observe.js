@@ -1136,12 +1136,6 @@ steal('can/util','can/construct', function(can) {
 			var args = can.makeArray(arguments),
 				i;
 
-			for ( i = 2; i < args.length; i++ ) {
-				var val = args[i];
-				if ( canMakeObserve(val) ) {
-					args[i] = hookupBubble(val, "*", this)
-				}
-			}
 			if ( howMany === undefined ) {
 				howMany = args[1] = this.length - index;
 			}
@@ -1368,14 +1362,6 @@ steal('can/util','can/construct', function(can) {
 				val,
 				constructor = this.constructor;
 
-			// Go through and convert anything to an `observe` that needs to be converted.
-			while(i--){
-				val = arguments[i];
-				args[i] =  canMakeObserve(val) ?
-					hookupBubble(val, "*", this, this.constructor.Observe, this.constructor) :
-					val;
-			}
-			
 			// Call the original method.
 			res = orig.apply(this, args);
 			
