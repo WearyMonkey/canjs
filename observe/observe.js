@@ -1354,8 +1354,7 @@ steal('can/util','can/construct', function(can) {
 		var orig = [][name]
 		list.prototype[name] = function() {
 			// Get the items being added.
-			var args = [],
-				// Where we are going to add items.
+            var // Where we are going to add items.
 				len = where ? this.length : 0,
 				i = arguments.length,
 				res,
@@ -1363,10 +1362,10 @@ steal('can/util','can/construct', function(can) {
 				constructor = this.constructor;
 
 			// Call the original method.
-			res = orig.apply(this, args);
+			res = orig.apply(this, arguments);
 			
-			if ( !this.comparator || !args.length ) {
-				this._triggerChange(""+len, "add", args, undefined);
+			if ( !this.comparator || !arguments.length ) {
+				this._triggerChange(""+len, "add", arguments, undefined);
 			}
 						
 			return res;
