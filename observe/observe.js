@@ -1364,7 +1364,7 @@ steal('can/util','can/construct', function(can) {
 			res = orig.apply(this, arguments);
 			
 			if ( !this.comparator || !arguments.length ) {
-				this._triggerChange(""+len, "add", arguments, undefined);
+				this._triggerChange(""+len, "add", can.makeArray(arguments), undefined);
 			}
 						
 			return res;
