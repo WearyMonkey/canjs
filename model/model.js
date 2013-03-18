@@ -68,7 +68,7 @@ steal('can/util','can/observe', function( can ) {
 		},
 		makeRequest = function( self, type, options, method ) {
 			var deferred,
-				args = [self.serialize(), options],
+				args = [self.serialize(options), options],
 				// The model.
 				model = self.constructor,
 				jqXHR;
